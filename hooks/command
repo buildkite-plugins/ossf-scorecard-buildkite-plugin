@@ -7,15 +7,102 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 # shellcheck source=lib/plugin.bash
 . "$DIR/../lib/plugin.bash"
 
-MANDATORY_OPTION=$(plugin_read_config MANDATORY "")
+# Required parameter
+GITHUB_TOKEN=$(plugin_read_config GITHUB_TOKEN "")
 
-if [ -z "${MANDATORY_OPTION}" ]; then
-  echo 'Missing mandatory option in the plugin'
+if [ -z "${GITHUB_TOKEN}" ]; then
+  echo "❌ Missing required 'github_token' parameter"
   exit 1
 fi
 
-OPTIONAL_OPTION=$(plugin_read_config OPTIONAL "default")
+# Optional parameters with defaults
+FAIL_BUILD_THRESHOLD=$(plugin_read_config FAIL_BUILD_THRESHOLD "")
+FORMAT=$(plugin_read_config FORMAT "json")
+ANNOTATE=$(plugin_read_config ANNOTATE "true")
+STORE_RESULTS=$(plugin_read_config STORE_RESULTS "false")
+VERSION=$(plugin_read_config VERSION "stable")
 
-echo "Running plugin with options:"
-echo " - mandatory: ${MANDATORY_OPTION}"
-echo " - optional: ${OPTIONAL_OPTION}"
+# Get repository URL from Buildkite environment
+REPO_URL="${BUILDKITE_REPO:-}"
+if [ -z "${REPO_URL}" ]; then
+  echo "❌ Unable to determine repository URL from Buildkite environment"
+  exit 1
+fi
+
+echo "🔍 Running OSSF Scorecard analysis..."
+echo "Repository: ${REPO_URL}"
+echo "Format: ${FORMAT}"
+echo "Version: ${VERSION}"
+
+# Build Docker command
+DOCKER_CMD="docker run --rm"
+DOCKER_CMD="${DOCKER_CMD} -e GITHUB_AUTH_TOKEN=${GITHUB_TOKEN}"
+DOCKER_CMD="${DOCKER_CMD} gcr.io/openssf/scorecard:${VERSION}"
+DOCKER_CMD="${DOCKER_CMD} --repo=${REPO_URL}"
+DOCKER_CMD="${DOCKER_CMD} --format=${FORMAT}"
+
+# Add specific checks if configured
+if plugin_read_list_into_result CHECKS; then
+  for check in "${result[@]}"; do
+    DOCKER_CMD="${DOCKER_CMD} --checks=${check}"
+  done
+fi
+
+# Run Scorecard
+echo "Running: ${DOCKER_CMD}"
+if ! SCORECARD_OUTPUT=$(eval "${DOCKER_CMD}" 2>&1); then
+  echo "❌ OSSF Scorecard failed:"
+  echo "${SCORECARD_OUTPUT}"
+  exit 1
+fi
+
+echo "✅ OSSF Scorecard completed successfully"
+
+# Store results if requested
+if [ "${STORE_RESULTS}" = "true" ]; then
+  RESULTS_FILE="scorecard-results.${FORMAT}"
+  echo "${SCORECARD_OUTPUT}" > "${RESULTS_FILE}"
+  if which buildkite-agent >/dev/null 2>&1; then
+    buildkite-agent artifact upload "${RESULTS_FILE}"
+    echo "📁 Results stored as artifact: ${RESULTS_FILE}"
+  else
+    echo "📁 Results saved to: ${RESULTS_FILE} (buildkite-agent not available)"
+  fi
+fi
+
+# Create annotation if requested (only for JSON format)
+if [ "${ANNOTATE}" = "true" ] && [ "${FORMAT}" = "json" ]; then
+  # Extract overall score from JSON output
+  if command -v jq >/dev/null 2>&1; then
+    OVERALL_SCORE=$(echo "${SCORECARD_OUTPUT}" | jq -r '.score // "N/A"')
+    ANNOTATION="## 🔍 OSSF Scorecard Results\n\n**Overall Score:** ${OVERALL_SCORE}/10\n\n"
+    ANNOTATION="${ANNOTATION}[View detailed results in artifacts](artifact://scorecard-results.${FORMAT})"
+
+    if which buildkite-agent >/dev/null 2>&1; then
+      echo -e "${ANNOTATION}" | buildkite-agent annotate --style info --context scorecard
+      echo "📝 Created Buildkite annotation with results"
+    else
+      echo "📝 Annotation content prepared (buildkite-agent not available)"
+    fi
+  else
+    echo "⚠️ jq not available, skipping annotation creation"
+  fi
+fi
+
+# Check threshold if configured (only for JSON format)
+if [ -n "${FAIL_BUILD_THRESHOLD}" ] && [ "${FORMAT}" = "json" ]; then
+  # Check if jq and bc are available
+  if command -v jq >/dev/null 2>&1 && command -v bc >/dev/null 2>&1; then
+    OVERALL_SCORE=$(echo "${SCORECARD_OUTPUT}" | jq -r '.score // 0')
+    if (( $(echo "${OVERALL_SCORE} < ${FAIL_BUILD_THRESHOLD}" | bc -l) )); then
+      echo "❌ Build failed: Overall score ${OVERALL_SCORE} is below threshold ${FAIL_BUILD_THRESHOLD}"
+      exit 1
+    else
+      echo "✅ Score ${OVERALL_SCORE} meets threshold ${FAIL_BUILD_THRESHOLD}"
+    fi
+  else
+    echo "⚠️ jq or bc not available, skipping threshold check"
+  fi
+fi
+
+echo "🎉 OSSF Scorecard analysis completed successfully"
