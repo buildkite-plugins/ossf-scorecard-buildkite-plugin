@@ -1,14 +1,38 @@
-name: Buildkite Plugin
-description: Exceptional functionality
+name: OSSF Scorecard
+description: Run OSSF Scorecard in Buildkite builds
 author: https://github.com/buildkite-plugins
 requirements:
-  - bash
+  - docker
 configuration:
   properties:
-    mandatory:
+    github_token:
       type: string
-    optional:
+      description: Token for interacting with GitHub for enhanced checks
+    fail_build_threshold:
+      type: number
+      description: Fail the build if the overall score falls below this threshold (0-10)
+    format:
       type: string
+      enum: [json, csv, sarif]
+      default: json
+      description: Output format for Scorecard results
+    checks:
+      type: array
+      description: Only run the specified checks (omit for all checks)
+      items:
+        type: string
+    annotate:
+      type: boolean
+      default: true
+      description: Create a Buildkite annotation with results
+    store_results:
+      type: boolean
+      default: false
+      description: Store results as a Buildkite artifact
+    version:
+      type: string
+      default: "stable"
+      description: Scorecard Docker image version to use
   required:
-    - mandatory
+    - github_token
   additionalProperties: false

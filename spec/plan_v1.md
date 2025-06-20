@@ -14,7 +14,7 @@ This document outlines the implementation plan for a Buildkite plugin that integ
 
 ### 1.2 Define Plugin Configuration Schema
 - Create `plugin.yml` with the full configuration schema
-- Define all possible parameters (github_token_env, fail_build_threshold, etc.)
+- Define all possible parameters (github_token, fail_build_threshold, etc.)
 - Document required and optional parameters
 - Add validation rules for parameter values
 
@@ -38,17 +38,17 @@ This document outlines the implementation plan for a Buildkite plugin that integ
 - Handle basic command execution and output capture
 - Support configurable Scorecard version
 
-### 2.2 Add GitHub Token Handling
-- Implement secure reading of GitHub token from environment variables
-- Add conditional logic for running with/without token
-- Document the differences in available checks with/without token
+### 2.2 Implement GitHub Token Handling
+- Create secure methods for providing GitHub token (required for Scorecard)
+- Support both direct token and environment variable reference
+- Document token scope requirements for different checks
 - Ensure token is never exposed in logs or outputs
 
 ### 2.3 Implement Specific Checks Selection
 - Add support for running only selected Scorecard checks
 - Parse and validate check names
 - Build command arguments for specified checks
-- Document available checks in README
+- Document available checks in README with their token scope requirements
 
 ### 2.4 Implement Results Processing
 - Parse Scorecard JSON output
@@ -104,7 +104,7 @@ This document outlines the implementation plan for a Buildkite plugin that integ
 
 ### 4.4 Create Usage Examples
 - Create example pipelines for common scenarios
-- Document GitHub token setup
+- Document GitHub token setup with appropriate scopes
 - Provide examples of different configuration options
 - Include screenshots of annotations and results
 
@@ -136,11 +136,13 @@ This document outlines the implementation plan for a Buildkite plugin that integ
 - Consider volume mounting security implications
 - Handle Docker errors gracefully
 
-### GitHub API Limitations
-- Document rate limiting considerations
-- Provide guidance on token scopes and permissions
-- Implement fallback to local-only mode when tokens aren't available
-- Consider organizational token management
+### GitHub Token Requirements
+- **GitHub token is required** for Scorecard to function properly
+- Different checks require different token scopes:
+  - Basic token with no scopes works for many checks
+  - `read:org` scope needed for CI-Tests, Contributors, and Branch-Protection checks
+- Implement secure token handling through environment variables
+- Document token creation and management best practices
 
 ### Security Considerations
 - Ensure secure handling of GitHub tokens
