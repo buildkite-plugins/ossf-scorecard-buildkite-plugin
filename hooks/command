@@ -72,6 +72,13 @@ fi
 
 echo "✅ OSSF Scorecard completed successfully"
 
+# Debug: Show first few lines of output
+echo "DEBUG: First 200 chars of output:"
+echo "${SCORECARD_OUTPUT}" | head -c 200
+echo ""
+echo "DEBUG: Output ends with:"
+echo "${SCORECARD_OUTPUT}" | tail -c 100
+
 # Store results if requested
 if [ "${STORE_RESULTS}" = "true" ]; then
   RESULTS_FILE="scorecard-results.${FORMAT}"
