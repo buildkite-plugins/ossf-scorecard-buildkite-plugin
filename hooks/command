@@ -64,20 +64,23 @@ fi
 
 # Run Scorecard
 echo "Running: ${DOCKER_CMD}"
-if ! SCORECARD_OUTPUT=$(eval "${DOCKER_CMD}" 2>&1); then
+if ! SCORECARD_RAW_OUTPUT=$(eval "${DOCKER_CMD}" 2>&1); then
   echo "❌ OSSF Scorecard failed:"
-  echo "${SCORECARD_OUTPUT}"
+  echo "${SCORECARD_RAW_OUTPUT}"
   exit 1
 fi
 
 echo "✅ OSSF Scorecard completed successfully"
 
-# Debug: Show first few lines of output
-echo "DEBUG: First 200 chars of output:"
-echo "${SCORECARD_OUTPUT}" | head -c 200
-echo ""
-echo "DEBUG: Output ends with:"
-echo "${SCORECARD_OUTPUT}" | tail -c 100
+# Extract only the JSON part (last line that starts with {)
+SCORECARD_OUTPUT=$(echo "${SCORECARD_RAW_OUTPUT}" | grep '^{' | tail -1)
+
+if [ -z "${SCORECARD_OUTPUT}" ]; then
+  echo "❌ No JSON output found in scorecard results"
+  echo "Raw output:"
+  echo "${SCORECARD_RAW_OUTPUT}"
+  exit 1
+fi
 
 # Store results if requested
 if [ "${STORE_RESULTS}" = "true" ]; then
