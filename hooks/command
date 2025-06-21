@@ -23,7 +23,7 @@ STORE_RESULTS=$(plugin_read_config STORE_RESULTS "false")
 VERSION=$(plugin_read_config VERSION "stable")
 
 # Get repository URL from Buildkite environment
-REPO_URL="${BUILDKITE_REPO:-}"
+REPO_URL="${BUILDKITE_REPO%.git:-}"
 if [ -z "${REPO_URL}" ]; then
   echo "❌ Unable to determine repository URL from Buildkite environment"
   exit 1
