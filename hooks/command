@@ -24,7 +24,7 @@ VERSION=$(plugin_read_config VERSION "stable")
 
 # Get repository URL from Buildkite environment
 STRIPPED_URL="${BUILDKITE_REPO%.git}"
-REPO_URL="{$STRIPPED_URL:-}"
+REPO_URL="${STRIPPED_URL:-}"
 if [ -z "${REPO_URL}" ]; then
   echo "❌ Unable to determine repository URL from Buildkite environment"
   exit 1
