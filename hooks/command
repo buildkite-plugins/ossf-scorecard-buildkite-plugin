@@ -42,12 +42,6 @@ echo "Repository: ${REPO_URL}"
 echo "Format: ${FORMAT}"
 echo "Version: ${VERSION}"
 
-# Debug token
-echo "DEBUG: All GITHUB vars:"
-env | grep GITHUB || echo "No GITHUB vars found"
-echo "DEBUG: GITHUB_TOKEN value: '${GITHUB_TOKEN:-NOT_SET}'"echo "DEBUG: Token length: ${#GITHUB_TOKEN}"
-echo "DEBUG: Token starts with: ${GITHUB_TOKEN:0:10}..."
-
 # Build Docker command
 DOCKER_CMD="docker run --rm"
 DOCKER_CMD="${DOCKER_CMD} -e GITHUB_AUTH_TOKEN=${GITHUB_TOKEN}"
