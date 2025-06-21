@@ -8,7 +8,13 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 . "$DIR/../lib/plugin.bash"
 
 # Required parameter
-GITHUB_TOKEN=$(plugin_read_config GITHUB_TOKEN "")
+GITHUB_TOKEN_RAW=$(plugin_read_config GITHUB_TOKEN "")
+# If the config contains a variable reference, expand it
+if [[ "${GITHUB_TOKEN_RAW}" =~ ^\$[A-Z_]+ ]]; then
+  GITHUB_TOKEN="${!GITHUB_TOKEN_RAW#$}"
+else
+  GITHUB_TOKEN="${GITHUB_TOKEN_RAW}"
+fi
 
 if [ -z "${GITHUB_TOKEN}" ]; then
   echo "❌ Missing required 'github_token' parameter"
