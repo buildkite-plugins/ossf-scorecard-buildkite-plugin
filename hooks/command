@@ -11,7 +11,8 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 GITHUB_TOKEN_RAW=$(plugin_read_config GITHUB_TOKEN "")
 # If the config contains a variable reference, expand it
 if [[ "${GITHUB_TOKEN_RAW}" =~ ^\$[A-Z_]+ ]]; then
-  GITHUB_TOKEN="${!GITHUB_TOKEN_RAW#$}"
+  VAR_NAME="${GITHUB_TOKEN_RAW#$}"
+  GITHUB_TOKEN="${!VAR_NAME}"
 else
   GITHUB_TOKEN="${GITHUB_TOKEN_RAW}"
 fi
