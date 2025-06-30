@@ -122,13 +122,13 @@ if [ "${ANNOTATE}" = "true" ] && [ "${FORMAT}" = "json" ]; then
     ERROR_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 0)] | length')
     
     # Get top 3 best performing checks
-    TOP_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score >= 0)] | sort_by(-.score) | .[0:3] | .[] | "• **\(.name)**: \(.score)/10 - \(.reason)"' | tr '\n' '\001')
+    TOP_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score >= 0)] | sort_by(-.score) | .[0:3] | .[] | "• **\(.name)**: \(.score)/10 - \(.reason)"')
     
     # Get worst performing checks (score < 7 and >= 0)
-    WORST_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 7 and .score >= 0)] | sort_by(.score) | .[0:3] | .[] | "• **\(.name)**: \(.score)/10 - \(.reason)"' | tr '\n' '\001')
+    WORST_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 7 and .score >= 0)] | sort_by(.score) | .[0:3] | .[] | "• **\(.name)**: \(.score)/10 - \(.reason)"')
     
     # Get checks with errors (score -1)
-    ERROR_CHECK_LIST=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 0)] | .[] | "• **\(.name)**: Error - \(.reason)"' | tr '\n' '\001')
+    ERROR_CHECK_LIST=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 0)] | .[] | "• **\(.name)**: Error - \(.reason)"')
     
     # Build annotation
     ANNOTATION="## ${SCORE_EMOJI} OSSF Scorecard Security Analysis\n\n"
@@ -141,17 +141,17 @@ if [ "${ANNOTATE}" = "true" ] && [ "${FORMAT}" = "json" ]; then
     
     # Add top performing checks
     if [ -n "${TOP_CHECKS}" ]; then
-      ANNOTATION="${ANNOTATION}### ✅ Top Performing Checks\n$(echo "${TOP_CHECKS}" | tr '\001' '\n')\n\n"
+      ANNOTATION="${ANNOTATION}### ✅ Top Performing Checks\n${TOP_CHECKS}\n\n"
     fi
     
     # Add areas for improvement
     if [ -n "${WORST_CHECKS}" ]; then
-      ANNOTATION="${ANNOTATION}### ⚠️ Areas for Improvement\n$(echo "${WORST_CHECKS}" | tr '\001' '\n')\n\n"
+      ANNOTATION="${ANNOTATION}### ⚠️ Areas for Improvement\n${WORST_CHECKS}\n\n"
     fi
     
     # Add error checks if any
     if [ -n "${ERROR_CHECK_LIST}" ]; then
-      ANNOTATION="${ANNOTATION}### ❌ Checks with Errors\n$(echo "${ERROR_CHECK_LIST}" | tr '\001' '\n')\n\n"
+      ANNOTATION="${ANNOTATION}### ❌ Checks with Errors\n${ERROR_CHECK_LIST}\n\n"
     fi
     
     ANNOTATION="${ANNOTATION}\n📋 [View detailed results](artifact://scorecard-results.${FORMAT}) • 📚 [OSSF Scorecard Documentation](https://github.com/ossf/scorecard#scorecard-checks)"
