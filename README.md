@@ -114,14 +114,6 @@ steps:
 | :-----------: | :-------------: | :----: | :----: |:---- |
 | ✅ | ✅ | ❌ | ✅ | Hosted (Mac): Docker required to run tests |
 
-## ⚒ Developing
-
-You can use the [bk cli](https://github.com/buildkite/cli) to run the [pipeline](.buildkite/pipeline.yml) locally:
-
-```bash
-bk local run
-```
-
 ### Running Tests
 
 ```bash
