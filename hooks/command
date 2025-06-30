@@ -160,7 +160,7 @@ if [ "${ANNOTATE}" = "true" ] && [ "${FORMAT}" = "json" ]; then
       # Write annotation to a temp file then use cat to properly preserve formatting
       ANNOTATION_FILE="markdown-for-annotation.md"
       printf "%b\n" "${ANNOTATION}" > "${ANNOTATION_FILE}"
-      cat "${ANNOTATION_FILE}" | buildkite-agent annotate --style "${ANNOTATION_STYLE}" --context scorecard
+      buildkite-agent annotate --style "${ANNOTATION_STYLE}" --context scorecard < "${ANNOTATION_FILE}"
       echo "📝 Created enhanced Buildkite annotation with detailed results"
     else
       echo "📝 Enhanced annotation content prepared (buildkite-agent not available)"
