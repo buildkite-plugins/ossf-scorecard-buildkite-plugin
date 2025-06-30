@@ -154,22 +154,6 @@ if [ "${ANNOTATE}" = "true" ] && [ "${FORMAT}" = "json" ]; then
       ANNOTATION="${ANNOTATION}### ❌ Checks with Errors\n${ERROR_CHECK_LIST}\n\n"
     fi
     
-    # Add recommendations based on score
-    ANNOTATION="${ANNOTATION}### 💡 Recommendations\n"
-    if (( $(echo "${OVERALL_SCORE} < 6" | bc -l 2>/dev/null || echo 0) )); then
-      ANNOTATION="${ANNOTATION}• Focus on implementing basic security practices\n"
-      ANNOTATION="${ANNOTATION}• Review failed checks and address critical security gaps\n"
-      ANNOTATION="${ANNOTATION}• Consider enabling branch protection and code review requirements\n"
-    elif (( $(echo "${OVERALL_SCORE} < 8" | bc -l 2>/dev/null || echo 0) )); then
-      ANNOTATION="${ANNOTATION}• Good foundation! Address remaining security gaps\n"
-      ANNOTATION="${ANNOTATION}• Consider implementing additional security tools (SAST, dependency scanning)\n"
-      ANNOTATION="${ANNOTATION}• Review and improve areas with lower scores\n"
-    else
-      ANNOTATION="${ANNOTATION}• Excellent security posture! 🎉\n"
-      ANNOTATION="${ANNOTATION}• Maintain current practices and stay updated with security best practices\n"
-      ANNOTATION="${ANNOTATION}• Consider sharing your security practices with the community\n"
-    fi
-    
     ANNOTATION="${ANNOTATION}\n📋 [View detailed results](artifact://scorecard-results.${FORMAT}) • 📚 [OSSF Scorecard Documentation](https://github.com/ossf/scorecard#scorecard-checks)"
 
     if which buildkite-agent >/dev/null 2>&1; then
