@@ -108,6 +108,24 @@ steps:
           store_results: true
 ```
 
+### With all options set
+
+```yaml
+steps:
+  - label: "🔍 Security Analysis"
+    plugins:
+      - ossf-scorecard#v1.0.0:
+          github_token: "$GITHUB_TOKEN"
+          format: "json"
+          annotate: true
+          fail_build_threshold: 7.0
+          store_results: true
+          version: "stable"
+          checks:
+            - "Binary-Artifacts"
+            - "Vulnerabilities"
+```
+
 ## Compatibility
 
 | Elastic Stack | Agent Stack K8s | Hosted (Mac) | Hosted (Linux) | Notes |
