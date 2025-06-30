@@ -157,7 +157,10 @@ if [ "${ANNOTATE}" = "true" ] && [ "${FORMAT}" = "json" ]; then
     ANNOTATION="${ANNOTATION}\n📋 [View detailed results](artifact://scorecard-results.${FORMAT}) • 📚 [OSSF Scorecard Documentation](https://github.com/ossf/scorecard#scorecard-checks)"
 
     if which buildkite-agent >/dev/null 2>&1; then
-      echo -e "${ANNOTATION}" | buildkite-agent annotate --style "${ANNOTATION_STYLE}" --context scorecard
+      # Write annotation to a temp file then use cat to properly preserve formatting
+      ANNOTATION_FILE="markdown-for-annotation.md"
+      printf "%b\n" "${ANNOTATION}" > "${ANNOTATION_FILE}"
+      cat "${ANNOTATION_FILE}" | buildkite-agent annotate --style "${ANNOTATION_STYLE}" --context scorecard
       echo "📝 Created enhanced Buildkite annotation with detailed results"
     else
       echo "📝 Enhanced annotation content prepared (buildkite-agent not available)"
