@@ -30,12 +30,14 @@ STORE_RESULTS=$(plugin_read_config STORE_RESULTS "false")
 VERSION=$(plugin_read_config VERSION "stable")
 
 # Get repository URL from Buildkite environment
-STRIPPED_URL="${BUILDKITE_REPO%.git}"
-REPO_URL="${STRIPPED_URL:-}"
-if [ -z "${REPO_URL}" ]; then
+BUILDKITE_REPO="${BUILDKITE_REPO:-}"
+if [ -z "${BUILDKITE_REPO}" ]; then
   echo "❌ Unable to determine repository URL from Buildkite environment"
   exit 1
 fi
+
+STRIPPED_URL="${BUILDKITE_REPO%.git}"
+REPO_URL="${STRIPPED_URL:-}"
 
 echo "🔍 Running OSSF Scorecard analysis..."
 echo "Repository: ${REPO_URL}"
@@ -66,14 +68,18 @@ fi
 
 echo "✅ OSSF Scorecard completed successfully"
 
-# Extract only the JSON part (last line that starts with {)
-SCORECARD_OUTPUT=$(echo "${SCORECARD_RAW_OUTPUT}" | grep '^{' | tail -1)
-
-if [ -z "${SCORECARD_OUTPUT}" ]; then
-  echo "❌ No JSON output found in scorecard results"
-  echo "Raw output:"
-  echo "${SCORECARD_RAW_OUTPUT}"
-  exit 1
+# Extract only the JSON part (last line that starts with {) if format is JSON
+if [ "${FORMAT}" = "json" ]; then
+  SCORECARD_OUTPUT=$(echo "${SCORECARD_RAW_OUTPUT}" | grep '^{' | tail -1)
+  
+  if [ -z "${SCORECARD_OUTPUT}" ]; then
+    echo "❌ No JSON output found in scorecard results"
+    echo "Raw output:"
+    echo "${SCORECARD_RAW_OUTPUT}"
+    exit 1
+  fi
+else
+  SCORECARD_OUTPUT="${SCORECARD_RAW_OUTPUT}"
 fi
 
 # Store results if requested
@@ -93,23 +99,91 @@ if [ "${ANNOTATE}" = "true" ] && [ "${FORMAT}" = "json" ]; then
   # Extract overall score from JSON output
   if command -v jq >/dev/null 2>&1; then
     OVERALL_SCORE=$(echo "${SCORECARD_OUTPUT}" | jq -r '.score // "N/A"')
-    ANNOTATION="## 🔍 OSSF Scorecard Results\n\n**Overall Score:** ${OVERALL_SCORE}/10\n\n"
-    ANNOTATION="${ANNOTATION}[View detailed results in artifacts](artifact://scorecard-results.${FORMAT})"
+    
+    # Determine score emoji and style
+    SCORE_EMOJI="🔴"
+    ANNOTATION_STYLE="error"
+    if (( $(echo "${OVERALL_SCORE} >= 8" | bc -l 2>/dev/null || echo 0) )); then
+      SCORE_EMOJI="🟢"
+      ANNOTATION_STYLE="success"
+    elif (( $(echo "${OVERALL_SCORE} >= 6" | bc -l 2>/dev/null || echo 0) )); then
+      SCORE_EMOJI="🟡"
+      ANNOTATION_STYLE="warning"
+    elif (( $(echo "${OVERALL_SCORE} >= 4" | bc -l 2>/dev/null || echo 0) )); then
+      SCORE_EMOJI="🟠"
+      ANNOTATION_STYLE="warning"
+    fi
+    
+    # Count check results
+    TOTAL_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '.checks | length')
+    PASSED_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score >= 7)] | length')
+    WARNING_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score >= 4 and .score < 7)] | length')
+    FAILED_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 4 and .score >= 0)] | length')
+    ERROR_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 0)] | length')
+    
+    # Get top 3 best performing checks
+    TOP_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score >= 0)] | sort_by(-.score) | .[0:3] | .[] | "• **\(.name)**: \(.score)/10 - \(.reason)"')
+    
+    # Get worst performing checks (score < 7 and >= 0)
+    WORST_CHECKS=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 7 and .score >= 0)] | sort_by(.score) | .[0:3] | .[] | "• **\(.name)**: \(.score)/10 - \(.reason)"')
+    
+    # Get checks with errors (score -1)
+    ERROR_CHECK_LIST=$(echo "${SCORECARD_OUTPUT}" | jq -r '[.checks[] | select(.score < 0)] | .[] | "• **\(.name)**: Error - \(.reason)"')
+    
+    # Build annotation
+    ANNOTATION="## ${SCORE_EMOJI} OSSF Scorecard Security Analysis\n\n"
+    ANNOTATION="${ANNOTATION}### Overall Score: **${OVERALL_SCORE}/10**\n\n"
+    ANNOTATION="${ANNOTATION}📊 **Summary:** ${PASSED_CHECKS} passed • ${WARNING_CHECKS} warnings • ${FAILED_CHECKS} failed"
+    if [ "${ERROR_CHECKS}" -gt 0 ]; then
+      ANNOTATION="${ANNOTATION} • ${ERROR_CHECKS} errors"
+    fi
+    ANNOTATION="${ANNOTATION} (${TOTAL_CHECKS} total checks)\n\n"
+    
+    # Add top performing checks
+    if [ -n "${TOP_CHECKS}" ]; then
+      ANNOTATION="${ANNOTATION}### ✅ Top Performing Checks\n${TOP_CHECKS}\n\n"
+    fi
+    
+    # Add areas for improvement
+    if [ -n "${WORST_CHECKS}" ]; then
+      ANNOTATION="${ANNOTATION}### ⚠️ Areas for Improvement\n${WORST_CHECKS}\n\n"
+    fi
+    
+    # Add error checks if any
+    if [ -n "${ERROR_CHECK_LIST}" ]; then
+      ANNOTATION="${ANNOTATION}### ❌ Checks with Errors\n${ERROR_CHECK_LIST}\n\n"
+    fi
+    
+    # Add recommendations based on score
+    ANNOTATION="${ANNOTATION}### 💡 Recommendations\n"
+    if (( $(echo "${OVERALL_SCORE} < 6" | bc -l 2>/dev/null || echo 0) )); then
+      ANNOTATION="${ANNOTATION}• Focus on implementing basic security practices\n"
+      ANNOTATION="${ANNOTATION}• Review failed checks and address critical security gaps\n"
+      ANNOTATION="${ANNOTATION}• Consider enabling branch protection and code review requirements\n"
+    elif (( $(echo "${OVERALL_SCORE} < 8" | bc -l 2>/dev/null || echo 0) )); then
+      ANNOTATION="${ANNOTATION}• Good foundation! Address remaining security gaps\n"
+      ANNOTATION="${ANNOTATION}• Consider implementing additional security tools (SAST, dependency scanning)\n"
+      ANNOTATION="${ANNOTATION}• Review and improve areas with lower scores\n"
+    else
+      ANNOTATION="${ANNOTATION}• Excellent security posture! 🎉\n"
+      ANNOTATION="${ANNOTATION}• Maintain current practices and stay updated with security best practices\n"
+      ANNOTATION="${ANNOTATION}• Consider sharing your security practices with the community\n"
+    fi
+    
+    ANNOTATION="${ANNOTATION}\n📋 [View detailed results](artifact://scorecard-results.${FORMAT}) • 📚 [OSSF Scorecard Documentation](https://github.com/ossf/scorecard#scorecard-checks)"
 
     if which buildkite-agent >/dev/null 2>&1; then
-      echo -e "${ANNOTATION}" | buildkite-agent annotate --style info --context scorecard
-      echo "📝 Created Buildkite annotation with results"
+      echo -e "${ANNOTATION}" | buildkite-agent annotate --style "${ANNOTATION_STYLE}" --context scorecard
+      echo "📝 Created enhanced Buildkite annotation with detailed results"
     else
-      echo "📝 Annotation content prepared (buildkite-agent not available)"
+      echo "📝 Enhanced annotation content prepared (buildkite-agent not available)"
     fi
   else
     echo "⚠️ jq not available, skipping annotation creation"
   fi
 fi
 
-# Check threshold if configured (only for JSON format)
 if [ -n "${FAIL_BUILD_THRESHOLD}" ] && [ "${FORMAT}" = "json" ]; then
-  # Check if jq and bc are available
   if command -v jq >/dev/null 2>&1 && command -v bc >/dev/null 2>&1; then
     OVERALL_SCORE=$(echo "${SCORECARD_OUTPUT}" | jq -r '.score // 0')
     if (( $(echo "${OVERALL_SCORE} < ${FAIL_BUILD_THRESHOLD}" | bc -l) )); then
