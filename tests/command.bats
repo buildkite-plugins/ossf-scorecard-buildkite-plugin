@@ -48,6 +48,7 @@ teardown() {
 
 @test "Custom format parameter works" {
   export BUILDKITE_PLUGIN_OSSF_SCORECARD_FORMAT='csv'
+  export BUILDKITE_PLUGIN_OSSF_SCORECARD_ANNOTATE='false'
 
   stub docker \
     "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=csv : echo 'repo,date,commit,check,score'"
@@ -85,16 +86,14 @@ teardown() {
 
 @test "Threshold check passes when score meets threshold" {
   export BUILDKITE_PLUGIN_OSSF_SCORECARD_FAIL_BUILD_THRESHOLD='5.0'
+  export BUILDKITE_PLUGIN_OSSF_SCORECARD_ANNOTATE='false'
 
   stub which \
     "jq : exit 0" \
-    "buildkite-agent : exit 1" \
-    "jq : exit 0" \
-    "awk : exit 0"
+    "bc : exit 0"
   stub docker \
     "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":7.5}'"
   stub jq \
-    "-r '.score // \"N/A\"' : echo '7.5'" \
     "-r '.score // 0' : echo '7.5'"
   stub bc \
     "-l : echo '0'"
@@ -107,16 +106,14 @@ teardown() {
 
 @test "Threshold check fails when score below threshold" {
   export BUILDKITE_PLUGIN_OSSF_SCORECARD_FAIL_BUILD_THRESHOLD='8.0'
+  export BUILDKITE_PLUGIN_OSSF_SCORECARD_ANNOTATE='false'
 
   stub which \
     "jq : exit 0" \
-    "buildkite-agent : exit 1" \
-    "jq : exit 0" \
-    "awk : exit 0"
+    "bc : exit 0"
   stub docker \
     "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":7.5}'"
   stub jq \
-    "-r '.score // \"N/A\"' : echo '7.5'" \
     "-r '.score // 0' : echo '7.5'"
   stub bc \
     "-l : echo '1'"
@@ -125,4 +122,91 @@ teardown() {
 
   assert_failure
   assert_output --partial "Build failed: Overall score 7.5 is below threshold 8.0"
+}
+
+@test "Enhanced annotation with high score shows success style" {
+  export BUILDKITE_PLUGIN_OSSF_SCORECARD_ANNOTATE='true'
+
+  stub which \
+    "jq : exit 0" \
+    "buildkite-agent : exit 1"
+  stub docker \
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":8.5,\"checks\":[{\"name\":\"Code-Review\",\"score\":10,\"reason\":\"Found 25/25 approved changesets\"},{\"name\":\"Binary-Artifacts\",\"score\":10,\"reason\":\"no binaries found\"},{\"name\":\"Maintained\",\"score\":5,\"reason\":\"5 commits in last 90 days\"}]}'"
+  stub jq \
+    "-r '.score // \"N/A\"' : echo '8.5'" \
+    "-r '.checks | length' : echo '3'" \
+    "-r '[.checks[] | select(.score >= 7)] | length' : echo '2'" \
+    "-r '[.checks[] | select(.score >= 4 and .score < 7)] | length' : echo '1'" \
+    "-r '[.checks[] | select(.score < 4 and .score >= 0)] | length' : echo '0'" \
+    "-r '[.checks[] | select(.score < 0)] | length' : echo '0'" \
+    "-r '[.checks[] | select(.score >= 0)] | sort_by(-.score) | .[0:3] | .[] | \"• **\\(.name)**: \\(.score)/10 - \\(.reason)\"' : echo '• **Code-Review**: 10/10 - Found 25/25 approved changesets\n• **Binary-Artifacts**: 10/10 - no binaries found\n• **Maintained**: 5/10 - 5 commits in last 90 days'" \
+    "-r '[.checks[] | select(.score < 7 and .score >= 0)] | sort_by(.score) | .[0:3] | .[] | \"• **\\(.name)**: \\(.score)/10 - \\(.reason)\"' : echo '• **Maintained**: 5/10 - 5 commits in last 90 days'" \
+    "-r '[.checks[] | select(.score < 0)] | .[] | \"• **\\(.name)**: Error - \\(.reason)\"' : echo ''"
+  stub bc \
+    "-l : echo '1'" \
+    "-l : echo '0'" \
+    "-l : echo '0'"
+
+  run "$PWD"/hooks/command
+
+  assert_success
+  assert_output --partial "Enhanced annotation content prepared (buildkite-agent not available)"
+}
+
+@test "Enhanced annotation with medium score shows warning style" {
+  export BUILDKITE_PLUGIN_OSSF_SCORECARD_ANNOTATE='true'
+
+  stub which \
+    "jq : exit 0" \
+    "buildkite-agent : exit 1"
+  stub docker \
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":6.5,\"checks\":[{\"name\":\"Code-Review\",\"score\":8,\"reason\":\"Found 20/25 approved changesets\"},{\"name\":\"SAST\",\"score\":0,\"reason\":\"no SAST tool detected\"},{\"name\":\"Branch-Protection\",\"score\":-1,\"reason\":\"internal error\"}]}'"
+  stub jq \
+    "-r '.score // \"N/A\"' : echo '6.5'" \
+    "-r '.checks | length' : echo '3'" \
+    "-r '[.checks[] | select(.score >= 7)] | length' : echo '1'" \
+    "-r '[.checks[] | select(.score >= 4 and .score < 7)] | length' : echo '0'" \
+    "-r '[.checks[] | select(.score < 4 and .score >= 0)] | length' : echo '1'" \
+    "-r '[.checks[] | select(.score < 0)] | length' : echo '1'" \
+    "-r '[.checks[] | select(.score >= 0)] | sort_by(-.score) | .[0:3] | .[] | \"• **\\(.name)**: \\(.score)/10 - \\(.reason)\"' : echo '• **Code-Review**: 8/10 - Found 20/25 approved changesets\n• **SAST**: 0/10 - no SAST tool detected'" \
+    "-r '[.checks[] | select(.score < 7 and .score >= 0)] | sort_by(.score) | .[0:3] | .[] | \"• **\\(.name)**: \\(.score)/10 - \\(.reason)\"' : echo '• **SAST**: 0/10 - no SAST tool detected'" \
+    "-r '[.checks[] | select(.score < 0)] | .[] | \"• **\\(.name)**: Error - \\(.reason)\"' : echo '• **Branch-Protection**: Error - internal error'"
+  stub bc \
+    "-l : echo '0'" \
+    "-l : echo '1'" \
+    "-l : echo '1'"
+
+  run "$PWD"/hooks/command
+
+  assert_success
+  assert_output --partial "Enhanced annotation content prepared (buildkite-agent not available)"
+}
+
+@test "Enhanced annotation with low score shows error style" {
+  export BUILDKITE_PLUGIN_OSSF_SCORECARD_ANNOTATE='true'
+
+  stub which \
+    "jq : exit 0" \
+    "buildkite-agent : exit 1"
+  stub docker \
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":3.2,\"checks\":[{\"name\":\"SAST\",\"score\":0,\"reason\":\"no SAST tool detected\"},{\"name\":\"Code-Review\",\"score\":2,\"reason\":\"Found 2/25 approved changesets\"},{\"name\":\"Vulnerabilities\",\"score\":8,\"reason\":\"no vulnerabilities detected\"}]}'"
+  stub jq \
+    "-r '.score // \"N/A\"' : echo '3.2'" \
+    "-r '.checks | length' : echo '3'" \
+    "-r '[.checks[] | select(.score >= 7)] | length' : echo '1'" \
+    "-r '[.checks[] | select(.score >= 4 and .score < 7)] | length' : echo '0'" \
+    "-r '[.checks[] | select(.score < 4 and .score >= 0)] | length' : echo '2'" \
+    "-r '[.checks[] | select(.score < 0)] | length' : echo '0'" \
+    "-r '[.checks[] | select(.score >= 0)] | sort_by(-.score) | .[0:3] | .[] | \"• **\\(.name)**: \\(.score)/10 - \\(.reason)\"' : echo '• **Vulnerabilities**: 8/10 - no vulnerabilities detected\n• **Code-Review**: 2/10 - Found 2/25 approved changesets\n• **SAST**: 0/10 - no SAST tool detected'" \
+    "-r '[.checks[] | select(.score < 7 and .score >= 0)] | sort_by(.score) | .[0:3] | .[] | \"• **\\(.name)**: \\(.score)/10 - \\(.reason)\"' : echo '• **SAST**: 0/10 - no SAST tool detected\n• **Code-Review**: 2/10 - Found 2/25 approved changesets'" \
+    "-r '[.checks[] | select(.score < 0)] | .[] | \"• **\\(.name)**: Error - \\(.reason)\"' : echo ''"
+  stub bc \
+    "-l : echo '0'" \
+    "-l : echo '0'" \
+    "-l : echo '1'"
+
+  run "$PWD"/hooks/command
+
+  assert_success
+  assert_output --partial "Enhanced annotation content prepared (buildkite-agent not available)"
 }
