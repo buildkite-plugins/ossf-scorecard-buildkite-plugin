@@ -59,7 +59,7 @@ if plugin_read_list_into_result CHECKS; then
 fi
 
 # Run Scorecard
-echo "Running: ${DOCKER_CMD}"
+echo "Running: docker run --rm -e GITHUB_AUTH_TOKEN=**** gcr.io/openssf/scorecard:${VERSION} --repo=${REPO_URL} --format=${FORMAT}${DOCKER_CMD#*--format=${FORMAT}}"
 if ! SCORECARD_RAW_OUTPUT=$(eval "${DOCKER_CMD}" 2>&1); then
   echo "❌ OSSF Scorecard failed:"
   echo "${SCORECARD_RAW_OUTPUT}"
