@@ -154,6 +154,15 @@ if [ "${ANNOTATE}" = "true" ] && [ "${FORMAT}" = "json" ]; then
       ANNOTATION="${ANNOTATION}### ❌ Checks with Errors\n${ERROR_CHECK_LIST}\n\n"
     fi
     
+    # Add OSSF Scorecard badge section
+    # Parse owner/repo from BUILDKITE_REPO (format: https://github.com/owner/repo.git)
+    if [[ "${REPO_URL}" =~ github\.com/([^/]+)/([^/]+)$ ]]; then
+      REPO_OWNER="${BASH_REMATCH[1]}"
+      REPO_NAME="${BASH_REMATCH[2]}"
+      BADGE_URL="[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/${REPO_OWNER}/${REPO_NAME}/badge)](https://scorecard.dev/viewer/?uri=github.com/${REPO_OWNER}/${REPO_NAME})"
+      ANNOTATION="${ANNOTATION}### 🏆 OSSF Scorecard Badge\n\nAdd this badge to your README to display your security score:\n\n\`\`\`markdown\n${BADGE_URL}\n\`\`\`\n\n"
+    fi
+    
     ANNOTATION="${ANNOTATION}\n📋 [View detailed results](artifact://scorecard-results.${FORMAT}) • 📚 [OSSF Scorecard Documentation](https://github.com/ossf/scorecard#scorecard-checks)"
 
     if which buildkite-agent >/dev/null 2>&1; then
