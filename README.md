@@ -1,4 +1,4 @@
-# OSSF Scorecard Buildkite Plugin [![Build status](https://badge.buildkite.com/d673030645c7f3e7e397affddd97cfe9f93a40547ed17b6dc5.svg)](https://buildkite.com/buildkite/plugins-template)
+# OSSF Scorecard Buildkite Plugin [![Build status](https://badge.buildkite.com/87dbbbba8d1c9763d680d4fa3cb581bad93368bce85413653a.svg)](https://buildkite.com/buildkite/plugin-ossf-scorecard)
 
 A Buildkite plugin that runs [OSSF Scorecard](https://github.com/ossf/scorecard) security analysis on your repository and provides detailed annotations with actionable insights.
 
