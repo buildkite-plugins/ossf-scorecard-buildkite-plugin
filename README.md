@@ -64,7 +64,7 @@ Specific scorecard checks to run. If not specified, all checks are run.
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.0:
+      - ossf-scorecard#v1.0.1:
           github_token: "$GITHUB_TOKEN"
 ```
 
@@ -74,7 +74,7 @@ steps:
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.0:
+      - ossf-scorecard#v1.0.1:
           github_token: "$GITHUB_TOKEN"
           fail_build_threshold: 7.0
           store_results: true
@@ -86,7 +86,7 @@ steps:
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.0:
+      - ossf-scorecard#v1.0.1:
           github_token: "$GITHUB_TOKEN"
           checks:
             - "Binary-Artifacts"
@@ -101,7 +101,7 @@ steps:
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.0:
+      - ossf-scorecard#v1.0.1:
           github_token: "$GITHUB_TOKEN"
           format: "csv"
           annotate: false
@@ -114,7 +114,7 @@ steps:
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.0:
+      - ossf-scorecard#v1.0.1:
           github_token: "$GITHUB_TOKEN"
           format: "json"
           annotate: true
