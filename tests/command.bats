@@ -37,7 +37,7 @@ teardown() {
 
 @test "Basic scorecard execution succeeds" {
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":7.5,\"checks\":[{\"name\":\"Binary-Artifacts\",\"score\":10,\"reason\":\"no binaries found\"}]}'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":7.5,\"checks\":[{\"name\":\"Binary-Artifacts\",\"score\":10,\"reason\":\"no binaries found\"}]}'"
 
   run "$PWD"/hooks/command
 
@@ -52,7 +52,7 @@ teardown() {
   export BUILDKITE_PLUGIN_OSSF_SCORECARD_ANNOTATE='false'
 
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=csv : echo 'repo,date,commit,check,score'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:stable --repo=https://github.com/example/repo --format=csv : echo 'repo,date,commit,check,score'"
 
   run "$PWD"/hooks/command
 
@@ -64,7 +64,7 @@ teardown() {
   export BUILDKITE_PLUGIN_OSSF_SCORECARD_VERSION='v4.8.0'
 
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:v4.8.0 --repo=https://github.com/example/repo --format=json : echo '{\"score\":8.0,\"checks\":[{\"name\":\"License\",\"score\":10,\"reason\":\"license file detected\"}]}'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:v4.8.0 --repo=https://github.com/example/repo --format=json : echo '{\"score\":8.0,\"checks\":[{\"name\":\"License\",\"score\":10,\"reason\":\"license file detected\"}]}'"
 
   run "$PWD"/hooks/command
 
@@ -77,7 +77,7 @@ teardown() {
   export BUILDKITE_PLUGIN_OSSF_SCORECARD_CHECKS_1='Code-Review'
 
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json --checks=Binary-Artifacts --checks=Code-Review : echo '{\"score\":6.0,\"checks\":[{\"name\":\"Binary-Artifacts\",\"score\":10,\"reason\":\"no binaries found\"},{\"name\":\"Code-Review\",\"score\":2,\"reason\":\"Found 1/12 approved changesets\"}]}'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:stable --repo=https://github.com/example/repo --format=json --checks=Binary-Artifacts --checks=Code-Review : echo '{\"score\":6.0,\"checks\":[{\"name\":\"Binary-Artifacts\",\"score\":10,\"reason\":\"no binaries found\"},{\"name\":\"Code-Review\",\"score\":2,\"reason\":\"Found 1/12 approved changesets\"}]}'"
 
   run "$PWD"/hooks/command
 
@@ -93,7 +93,7 @@ teardown() {
     "jq : exit 0" \
     "bc : exit 0"
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":7.5}'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":7.5}'"
   stub jq \
     "-r '.score // 0' : echo '7.5'"
   stub bc \
@@ -113,7 +113,7 @@ teardown() {
     "jq : exit 0" \
     "bc : exit 0"
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":7.5}'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":7.5}'"
   stub jq \
     "-r '.score // 0' : echo '7.5'"
   stub bc \
@@ -132,7 +132,7 @@ teardown() {
     "jq : exit 0" \
     "buildkite-agent : exit 1"
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":8.5,\"checks\":[{\"name\":\"Code-Review\",\"score\":10,\"reason\":\"Found 25/25 approved changesets\"},{\"name\":\"Binary-Artifacts\",\"score\":10,\"reason\":\"no binaries found\"},{\"name\":\"Maintained\",\"score\":5,\"reason\":\"5 commits in last 90 days\"}]}'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":8.5,\"checks\":[{\"name\":\"Code-Review\",\"score\":10,\"reason\":\"Found 25/25 approved changesets\"},{\"name\":\"Binary-Artifacts\",\"score\":10,\"reason\":\"no binaries found\"},{\"name\":\"Maintained\",\"score\":5,\"reason\":\"5 commits in last 90 days\"}]}'"
   stub jq \
     "-r '.score // \"N/A\"' : echo '8.5'" \
     "-r '.checks | length' : echo '3'" \
@@ -161,7 +161,7 @@ teardown() {
     "jq : exit 0" \
     "buildkite-agent : exit 1"
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":6.5,\"checks\":[{\"name\":\"Code-Review\",\"score\":8,\"reason\":\"Found 20/25 approved changesets\"},{\"name\":\"SAST\",\"score\":0,\"reason\":\"no SAST tool detected\"},{\"name\":\"Branch-Protection\",\"score\":-1,\"reason\":\"internal error\"}]}'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":6.5,\"checks\":[{\"name\":\"Code-Review\",\"score\":8,\"reason\":\"Found 20/25 approved changesets\"},{\"name\":\"SAST\",\"score\":0,\"reason\":\"no SAST tool detected\"},{\"name\":\"Branch-Protection\",\"score\":-1,\"reason\":\"internal error\"}]}'"
   stub jq \
     "-r '.score // \"N/A\"' : echo '6.5'" \
     "-r '.checks | length' : echo '3'" \
@@ -190,7 +190,7 @@ teardown() {
     "jq : exit 0" \
     "buildkite-agent : exit 1"
   stub docker \
-    "run --rm -e GITHUB_AUTH_TOKEN=test-token gcr.io/openssf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":3.2,\"checks\":[{\"name\":\"SAST\",\"score\":0,\"reason\":\"no SAST tool detected\"},{\"name\":\"Code-Review\",\"score\":2,\"reason\":\"Found 2/25 approved changesets\"},{\"name\":\"Vulnerabilities\",\"score\":8,\"reason\":\"no vulnerabilities detected\"}]}'"
+    "run --rm -e GITHUB_AUTH_TOKEN=test-token ghcr.io/ossf/scorecard:stable --repo=https://github.com/example/repo --format=json : echo '{\"score\":3.2,\"checks\":[{\"name\":\"SAST\",\"score\":0,\"reason\":\"no SAST tool detected\"},{\"name\":\"Code-Review\",\"score\":2,\"reason\":\"Found 2/25 approved changesets\"},{\"name\":\"Vulnerabilities\",\"score\":8,\"reason\":\"no vulnerabilities detected\"}]}'"
   stub jq \
     "-r '.score // \"N/A\"' : echo '3.2'" \
     "-r '.checks | length' : echo '3'" \
