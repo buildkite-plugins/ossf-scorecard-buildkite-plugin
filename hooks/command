@@ -27,7 +27,7 @@ FAIL_BUILD_THRESHOLD=$(plugin_read_config FAIL_BUILD_THRESHOLD "")
 FORMAT=$(plugin_read_config FORMAT "json")
 ANNOTATE=$(plugin_read_config ANNOTATE "true")
 STORE_RESULTS=$(plugin_read_config STORE_RESULTS "false")
-VERSION=$(plugin_read_config VERSION "latest")
+VERSION=$(plugin_read_config VERSION "v5.5.0")
 
 # Get repository URL from Buildkite environment
 BUILDKITE_REPO="${BUILDKITE_REPO:-}"

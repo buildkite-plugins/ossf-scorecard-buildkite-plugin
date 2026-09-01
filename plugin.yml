@@ -31,7 +31,7 @@ configuration:
       description: Store results as a Buildkite artifact
     version:
       type: string
-      default: "stable"
+      default: "v5.5.0"
       description: Scorecard Docker image version to use
   required:
     - github_token
