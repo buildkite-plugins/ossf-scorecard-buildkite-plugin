@@ -1,6 +1,28 @@
 {
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:base",
     ":disableDependencyDashboard"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Keep the pinned OSSF Scorecard image tag in sync across the hook, schema, README and test stubs",
+      "managerFilePatterns": [
+        "hooks/command",
+        "plugin.yml",
+        "README.md",
+        "tests/command.bats"
+      ],
+      "matchStrings": [
+        "plugin_read_config VERSION \"(?<currentValue>v\\d+\\.\\d+\\.\\d+)\"",
+        "version:\\s+type: string\\s+default: \"(?<currentValue>v\\d+\\.\\d+\\.\\d+)\"",
+        "`version` \\(string, default: `(?<currentValue>v\\d+\\.\\d+\\.\\d+)`\\)",
+        "DEFAULT_SCORECARD_IMAGE=\"ghcr\\.io/ossf/scorecard:(?<currentValue>v\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "depNameTemplate": "ghcr.io/ossf/scorecard",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
   ]
 }
