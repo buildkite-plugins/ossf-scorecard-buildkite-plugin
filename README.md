@@ -48,7 +48,7 @@ Output format for scorecard results. Supported values: `json`, `csv`, `sarif`.
 
 Whether to store the scorecard results as a build artifact.
 
-#### `version` (string, default: `stable`)
+#### `version` (string, default: `v5.5.0`)
 
 OSSF Scorecard Docker image version to use.
 
@@ -64,7 +64,7 @@ Specific scorecard checks to run. If not specified, all checks are run.
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.1:
+      - ossf-scorecard#v1.1.0:
           github_token: "$GITHUB_TOKEN"
 ```
 
@@ -74,7 +74,7 @@ steps:
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.1:
+      - ossf-scorecard#v1.1.0:
           github_token: "$GITHUB_TOKEN"
           fail_build_threshold: 7.0
           store_results: true
@@ -86,7 +86,7 @@ steps:
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.1:
+      - ossf-scorecard#v1.1.0:
           github_token: "$GITHUB_TOKEN"
           checks:
             - "Binary-Artifacts"
@@ -101,7 +101,7 @@ steps:
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.1:
+      - ossf-scorecard#v1.1.0:
           github_token: "$GITHUB_TOKEN"
           format: "csv"
           annotate: false
@@ -114,13 +114,13 @@ steps:
 steps:
   - label: "🔍 Security Analysis"
     plugins:
-      - ossf-scorecard#v1.0.1:
+      - ossf-scorecard#v1.1.0:
           github_token: "$GITHUB_TOKEN"
           format: "json"
           annotate: true
           fail_build_threshold: 7.0
           store_results: true
-          version: "stable"
+          version: "v4.13.1"
           checks:
             - "Binary-Artifacts"
             - "Vulnerabilities"
