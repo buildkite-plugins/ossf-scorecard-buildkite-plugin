@@ -48,7 +48,7 @@ Output format for scorecard results. Supported values: `json`, `csv`, `sarif`.
 
 Whether to store the scorecard results as a build artifact.
 
-#### `version` (string, default: `v5.5.0`)
+#### `version` (string, default: `v5.6.0`)
 
 OSSF Scorecard Docker image version to use.
 
