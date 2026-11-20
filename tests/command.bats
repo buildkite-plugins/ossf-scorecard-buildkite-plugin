@@ -9,7 +9,7 @@ setup() {
   export BUILDKITE_REPO='https://github.com/example/repo'
 
   # Mirrors the default in hooks/command; Renovate bumps both together
-  DEFAULT_SCORECARD_IMAGE="ghcr.io/ossf/scorecard:v5.5.0"
+  DEFAULT_SCORECARD_IMAGE="ghcr.io/ossf/scorecard:v5.7.0"
 }
 
 teardown() {
